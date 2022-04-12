@@ -5,6 +5,7 @@ import seaborn as sns
 from sklearn.svm import SVC
 from sklearn.kernel_approximation import Nystroem
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
+from sklearn.preprocessing import OrdinalEncoder
 
 
 """
@@ -38,6 +39,26 @@ def get_non_numeric_columns(df: pd.DataFrame):
     non_numeric_cols = df_non_numeric.columns.values
     return non_numeric_cols
 
+def create_ordinal_encoding_mappings(df: pd.DataFrame, ordinal_columns: list):
+    """
+    """
+    mappings = {column: {} for column in ordinal_columns}
+    for column in ordinal_columns:
+        unique_vals = df[column].unique()
+        for val in unique_vals:
+            mappings[column][val] = len(mappings[column])
+    maps_list = [{'col': col, 'mapping': mappings[col]} for col in mappings]
+    return maps_list
+
+def apply_ordinal_encoding_values_for_non_numeric_columns(df: pd.DataFrame, mappings_list: str):
+    """
+    """
+    encoder = OrdinalEncoder(mapping=mappings_list)
+    encoder.fit_transform(df)
+    print(encoder.categories_)
+    #print(result)
+    return result, encoder
+
 def remove_rows_with_null_bmi(df: pd.DataFrame):
     """
     Cleans the bmi data in DataFrame df by removing all rows where the bmi value is null.
@@ -57,13 +78,10 @@ def main():
     df = load_data('healthcare-dataset-stroke-data.csv')
     print(df.shape)
     print(df.dtypes)
-    '''
-    numeric_cols = get_numeric_columns(df)
-    print(numeric_cols)
 
-    non_numeric_cols = non_numeric_cols(df)
+    non_numeric_cols = get_non_numeric_columns(df)
     print(non_numeric_cols)
-    '''
+
     print('Initial data evaluation...')
     evaluate_missing_values_in_df(df)
 
@@ -72,6 +90,13 @@ def main():
     print('Post data cleaning evaluation...')
     evaluate_missing_values_in_df(df)
 
+    maps_list = create_ordinal_encoding_mappings(df, non_numeric_cols)
+    apply_ordinal_encoding_values_for_non_numeric_columns(df, maps_list)
+    '''
+    X_df = 
+    y_df = 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
+    '''
     SVC_Gaussian = SVC(kernel='rbf')
 
 
