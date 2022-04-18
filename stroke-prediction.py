@@ -39,25 +39,25 @@ def get_non_numeric_columns(df: pd.DataFrame):
     non_numeric_cols = df_non_numeric.columns.values
     return non_numeric_cols
 
-def create_ordinal_encoding_mappings(df: pd.DataFrame, ordinal_columns: list):
+def create_ordinal_encoding_mappings(df: pd.DataFrame):
     """
+    Iterates over categorical columns. Retrieves unique values in each column, and creates
+    ordinal encoding mappings.
     """
-    mappings = {column: {} for column in ordinal_columns}
-    for column in ordinal_columns:
+    cols_list = []
+    for column in df:
         unique_vals = df[column].unique()
-        for val in unique_vals:
-            mappings[column][val] = len(mappings[column])
-    maps_list = [{'col': col, 'mapping': mappings[col]} for col in mappings]
-    return maps_list
+        cols_list.append(unique_vals)
+    return cols_list
 
-def apply_ordinal_encoding_values_for_non_numeric_columns(df: pd.DataFrame, mappings_list: str):
+def apply_ordinal_encoding_values_for_non_numeric_columns(df: pd.DataFrame, mappings_list: str, columns: list):
     """
+    Applies ordinal encoding values to categorical dataframe.
     """
-    encoder = OrdinalEncoder(mapping=mappings_list)
-    encoder.fit_transform(df)
-    print(encoder.categories_)
-    #print(result)
-    return result, encoder
+    encoder = OrdinalEncoder(categories=mappings_list)
+    updated = encoder.fit_transform(df)
+    df = pd.DataFrame(updated, columns=columns)
+    return df, encoder
 
 def remove_rows_with_null_bmi(df: pd.DataFrame):
     """
@@ -76,22 +76,30 @@ def evaluate_missing_values_in_df(df: pd.DataFrame):
 
 def main():
     df = load_data('healthcare-dataset-stroke-data.csv')
-    print(df.shape)
-    print(df.dtypes)
 
+    numeric_cols = get_numeric_columns(df)
     non_numeric_cols = get_non_numeric_columns(df)
     print(non_numeric_cols)
 
     print('Initial data evaluation...')
     evaluate_missing_values_in_df(df)
-
+ 
     df = remove_rows_with_null_bmi(df)
 
     print('Post data cleaning evaluation...')
     evaluate_missing_values_in_df(df)
 
-    maps_list = create_ordinal_encoding_mappings(df, non_numeric_cols)
-    apply_ordinal_encoding_values_for_non_numeric_columns(df, maps_list)
+    numerical_df = df[numeric_cols].copy()
+    categorical_df = df[non_numeric_cols].copy()
+
+    maps_list = create_ordinal_encoding_mappings(categorical_df)
+    ec_applied_df, categories = apply_ordinal_encoding_values_for_non_numeric_columns(categorical_df, maps_list, non_numeric_cols)
+
+    print("Ec applied datatypes...")
+    print(ec_applied_df.dtypes)
+    print(ec_applied_df)
+    final_df = pd.merge(numerical_df, ec_applied_df, left_index=True, right_index=True)
+    print(final_df)
     '''
     X_df = 
     y_df = 
