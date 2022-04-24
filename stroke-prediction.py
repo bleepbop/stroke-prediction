@@ -2,11 +2,15 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 
+from matplotlib import pyplot
+
 from sklearn.svm import SVC
 from sklearn.kernel_approximation import Nystroem
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 
 """
@@ -75,6 +79,37 @@ def evaluate_missing_values_in_df(df: pd.DataFrame):
         pct_missing = np.mean(df[col].isnull())
         print('{} - {}%'.format(col, round(pct_missing*100)))
 
+def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame):
+    """
+    Reference: https://machinelearningmastery.com/calculate-feature-importance-with-python/
+    """
+    # define the model
+    model = DecisionTreeClassifier()
+    # fit the model
+    model.fit(X, y)
+    # get importance
+    importance = model.feature_importances_
+    # summarize feature importance
+    for i,v in enumerate(importance):
+        print('Feature: %0d, Score: %.5f' % (i,v))
+    # plot feature importance
+    pyplot.bar([x for x in range(len(importance))], importance)
+    pyplot.show()
+
+def classification_feature_importance_rand_forest(X: pd.DataFrame, y: pd.DataFrame):
+    # define the model
+    model = RandomForestClassifier()
+    # fit the model
+    model.fit(X, y)
+    # get importance
+    importance = model.feature_importances_
+    # summarize feature importance
+    for i,v in enumerate(importance):
+        print('Feature: %0d, Score: %.5f' % (i,v))
+    # plot feature importance
+    pyplot.bar([x for x in range(len(importance))], importance)
+    pyplot.show()
+
 def main():
     df = load_data('healthcare-dataset-stroke-data.csv')
 
@@ -104,7 +139,22 @@ def main():
     X_df = final_df.drop(['stroke'], axis=1)
 
     X_train, X_test, y_train, y_test = train_test_split(X_df, y_df, test_size=0.33)
+
+    classification_feature_importance_rand_forest(X_df, y_df)
+    classification_feature_importance_CART(X_df, y_df)
+
+    # Remaining steps:
+    # * feature selection
+    # * model selection and tuning
     # SVC_Gaussian = SVC(kernel='rbf')
+    """
+    Models to explore:
+    * Logistic Regression
+    * k-Nearest Neighbors
+    * Decision Trees
+    * Support Vector Machine
+    * Naive Bayes
+    """
 
 if __name__ == '__main__':
     main()
