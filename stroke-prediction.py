@@ -6,6 +6,7 @@ from sklearn.svm import SVC
 from sklearn.kernel_approximation import Nystroem
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
 from sklearn.preprocessing import OrdinalEncoder
+from sklearn.model_selection import train_test_split
 
 
 """
@@ -79,14 +80,14 @@ def main():
 
     numeric_cols = get_numeric_columns(df)
     non_numeric_cols = get_non_numeric_columns(df)
-    print(non_numeric_cols)
 
-    print('Initial data evaluation...')
+    print('#' * 15, ' Initial data evaluation...', '#' * 15)
     evaluate_missing_values_in_df(df)
- 
+
+    print('#' * 15, ' Remove rows with null BMI...', '#' * 15)
     df = remove_rows_with_null_bmi(df)
 
-    print('Post data cleaning evaluation...')
+    print('#' * 15, 'Post data cleaning evaluation...', '#' * 15)
     evaluate_missing_values_in_df(df)
 
     numerical_df = df[numeric_cols].copy()
@@ -95,18 +96,15 @@ def main():
     maps_list = create_ordinal_encoding_mappings(categorical_df)
     ec_applied_df, categories = apply_ordinal_encoding_values_for_non_numeric_columns(categorical_df, maps_list, non_numeric_cols)
 
-    print("Ec applied datatypes...")
-    print(ec_applied_df.dtypes)
-    print(ec_applied_df)
+    print('#' * 15, 'Ec applied datatypes...', '#' * 15)
     final_df = pd.merge(numerical_df, ec_applied_df, left_index=True, right_index=True)
-    print(final_df)
-    '''
-    X_df = 
-    y_df = 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
-    '''
-    SVC_Gaussian = SVC(kernel='rbf')
 
+    # Split into X, y sets
+    y_df = final_df[['stroke']]
+    X_df = final_df.drop(['stroke'], axis=1)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_df, y_df, test_size=0.33)
+    # SVC_Gaussian = SVC(kernel='rbf')
 
 if __name__ == '__main__':
     main()
