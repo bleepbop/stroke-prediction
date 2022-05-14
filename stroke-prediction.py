@@ -79,7 +79,7 @@ def evaluate_missing_values_in_df(df: pd.DataFrame):
         pct_missing = np.mean(df[col].isnull())
         print('{} - {}%'.format(col, round(pct_missing*100)))
 
-def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame):
+def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame, display_graph=False):
     """
     Reference: https://machinelearningmastery.com/calculate-feature-importance-with-python/
     """
@@ -89,26 +89,40 @@ def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame):
     model.fit(X, y)
     # get importance
     importance = model.feature_importances_
+    feature_scores = []
     # summarize feature importance
     for i,v in enumerate(importance):
+        feature_scores.append(v)
         print('Feature: %0d, Score: %.5f' % (i,v))
     # plot feature importance
-    pyplot.bar([x for x in range(len(importance))], importance)
-    pyplot.show()
+    if display_graph:
+        pyplot.bar([x for x in range(len(importance))], importance)
+        pyplot.show()
+    return feature_scores
 
-def classification_feature_importance_rand_forest(X: pd.DataFrame, y: pd.DataFrame):
+def classification_feature_importance_rand_forest(X: pd.DataFrame, y: pd.DataFrame, display_graph=False):
     # define the model
     model = RandomForestClassifier()
     # fit the model
     model.fit(X, y)
     # get importance
     importance = model.feature_importances_
+    feature_scores = []
     # summarize feature importance
     for i,v in enumerate(importance):
         print('Feature: %0d, Score: %.5f' % (i,v))
+        feature_scores.append(v)
     # plot feature importance
-    pyplot.bar([x for x in range(len(importance))], importance)
-    pyplot.show()
+    if display_graph:
+        pyplot.bar([x for x in range(len(importance))], importance)
+        pyplot.show()
+    return feature_scores
+
+def compute_average_score(lhs: list, rhs: list):
+    comb = []
+    for i in range(0, len(lhs)):
+        comb.append((lhs[i] + rhs[i]) / 2)
+    return comb
 
 def main():
     df = load_data('healthcare-dataset-stroke-data.csv')
@@ -140,8 +154,21 @@ def main():
 
     X_train, X_test, y_train, y_test = train_test_split(X_df, y_df, test_size=0.33)
 
-    classification_feature_importance_rand_forest(X_df, y_df)
-    classification_feature_importance_CART(X_df, y_df)
+    feature_index = {}
+    idx = 0
+    for feature in X_df.columns:
+        feature_index[idx] = feature
+        idx += 1
+
+    scores_rand_forest = classification_feature_importance_rand_forest(X_df, y_df)
+    scores_CART = classification_feature_importance_CART(X_df, y_df)
+
+    # Using both of these measures, we can see that the most statistically significant features are features 1, 4, and 5.
+    # Feature 0 appears to be significant, but it is just the ID number for the corresponding patient.
+    average_scores = compute_average_score(scores_rand_forest, scores_CART)
+    print('#' * 15, ' Enumerating average feature scores...', '#' * 15)
+    for i,v in enumerate(average_scores):
+        print('Feature: %0d, Score: %.5f' % (i,v))
 
     # Remaining steps:
     # * feature selection
