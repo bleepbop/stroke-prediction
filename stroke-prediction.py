@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 
 from matplotlib import pyplot
+from operator import itemgetter
 
 from sklearn.svm import SVC
 from sklearn.kernel_approximation import Nystroem
@@ -168,10 +169,15 @@ def main():
     average_scores = compute_average_score(scores_rand_forest, scores_CART)
     print('#' * 15, ' Enumerating average feature scores...', '#' * 15)
     for i,v in enumerate(average_scores):
-        print('Feature: %0d, Score: %.5f' % (i,v))
+        print('Feature: %0d (%s), Score: %.5f' % (i,feature_index[i], v))
+    
+    selected_columns = ["age", "avg_glucose_level", "bmi"]
+    final_X_train = X_train.filter([selected_columns])
+
+    SVC_Gaussian = SVC(kernel='rbf')
+    SVC_Gaussian.fit(final_X_train, y_train)
 
     # Remaining steps:
-    # * feature selection
     # * model selection and tuning
     # SVC_Gaussian = SVC(kernel='rbf')
     """
