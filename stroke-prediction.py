@@ -7,7 +7,7 @@ from operator import itemgetter
 
 from sklearn.svm import SVC
 from sklearn.kernel_approximation import Nystroem
-from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score
+from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, confusion_matrix
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
@@ -18,6 +18,11 @@ from sklearn.ensemble import RandomForestClassifier
 Simple project to gain experience with data science and machine learning. The following sources were used:
     * Data cleaning guide: https://towardsdatascience.com/data-cleaning-in-python-the-ultimate-guide-2020-c63b88bf0a0d
     * Project suggestions: https://towardsdatascience.com/5-data-science-projects-in-healthcare-that-will-get-you-hired-81003cadf2f3
+    * Algorithm selection: https://towardsdatascience.com/do-you-know-how-to-choose-the-right-machine-learning-algorithm-among-7-different-types-295d0b0c7f60
+    * More algorithm selection: https://machinelearningmastery.com/get-your-hands-dirty-with-scikit-learn-now/
+    * Methods for feature selection: https://machinelearningmastery.com/feature-selection-machine-learning-python/
+    * How to evaluate your model: https://www.jeremyjordan.me/evaluating-a-machine-learning-model/
+
 """
 
 
@@ -80,38 +85,40 @@ def evaluate_missing_values_in_df(df: pd.DataFrame):
         pct_missing = np.mean(df[col].isnull())
         print('{} - {}%'.format(col, round(pct_missing*100)))
 
-def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame, display_graph=False):
+def classification_feature_importance_CART(X: pd.DataFrame, y: pd.DataFrame, feature_list: list, display_graph=False):
     """
     Reference: https://machinelearningmastery.com/calculate-feature-importance-with-python/
     """
+    print("############### Feature Importance with CART ###############")
     # define the model
     model = DecisionTreeClassifier()
     # fit the model
-    model.fit(X, y)
+    model.fit(X, y.values.ravel())
     # get importance
     importance = model.feature_importances_
     feature_scores = []
     # summarize feature importance
     for i,v in enumerate(importance):
         feature_scores.append(v)
-        print('Feature: %0d, Score: %.5f' % (i,v))
+        print('Feature: %0d (%s), Score: %.5f' % (i,feature_list[i], v))
     # plot feature importance
     if display_graph:
         pyplot.bar([x for x in range(len(importance))], importance)
         pyplot.show()
     return feature_scores
 
-def classification_feature_importance_rand_forest(X: pd.DataFrame, y: pd.DataFrame, display_graph=False):
+def classification_feature_importance_rand_forest(X: pd.DataFrame, y: pd.DataFrame, feature_list: list, display_graph=False):
+    print("############### Feature Importance with Random Forest ###############")
     # define the model
     model = RandomForestClassifier()
     # fit the model
-    model.fit(X, y)
+    model.fit(X, y.values.ravel())
     # get importance
     importance = model.feature_importances_
     feature_scores = []
     # summarize feature importance
     for i,v in enumerate(importance):
-        print('Feature: %0d, Score: %.5f' % (i,v))
+        print('Feature: %0d (%s), Score: %.5f' % (i,feature_list[i], v))
         feature_scores.append(v)
     # plot feature importance
     if display_graph:
@@ -161,8 +168,8 @@ def main():
         feature_index[idx] = feature
         idx += 1
 
-    scores_rand_forest = classification_feature_importance_rand_forest(X_df, y_df)
-    scores_CART = classification_feature_importance_CART(X_df, y_df)
+    scores_rand_forest = classification_feature_importance_rand_forest(X_df, y_df, feature_index)
+    scores_CART = classification_feature_importance_CART(X_df, y_df, feature_index)
 
     # Using both of these measures, we can see that the most statistically significant features are features 1, 4, and 5.
     # Feature 0 appears to be significant, but it is just the ID number for the corresponding patient.
@@ -171,12 +178,24 @@ def main():
     for i,v in enumerate(average_scores):
         print('Feature: %0d (%s), Score: %.5f' % (i,feature_index[i], v))
     
-    selected_columns = ["age", "avg_glucose_level", "bmi"]
-    final_X_train = X_train.filter([selected_columns])
+    selected_columns = ['age', 'avg_glucose_level', 'bmi']
+    final_X_train = X_train[selected_columns].copy()
+    final_X_test = X_test[selected_columns].copy()
 
     SVC_Gaussian = SVC(kernel='rbf')
-    SVC_Gaussian.fit(final_X_train, y_train)
+    # .values gives the numpy array values shape (n, 1). 
+    # .ravel will flatten the array to (n,)
+    SVC_Gaussian.fit(final_X_train, y_train.values.ravel())
 
+    # Make predictions:
+    expected = y_test.values.ravel()
+    predicted = SVC_Gaussian.predict(final_X_test)
+    print(set(expected) - set(predicted))
+    print(expected)
+    print(predicted)
+
+    print(classification_report(expected, predicted))
+    print(confusion_matrix(expected, predicted))
     # Remaining steps:
     # * model selection and tuning
     # SVC_Gaussian = SVC(kernel='rbf')
