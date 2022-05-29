@@ -160,8 +160,7 @@ def main():
     y_df = final_df[['stroke']]
     X_df = final_df.drop(['stroke'], axis=1)
 
-    X_train, X_test, y_train, y_test = train_test_split(X_df, y_df, test_size=0.33)
-
+    # Find significant features
     feature_index = {}
     idx = 0
     for feature in X_df.columns:
@@ -177,28 +176,37 @@ def main():
     print('#' * 15, ' Enumerating average feature scores...', '#' * 15)
     for i,v in enumerate(average_scores):
         print('Feature: %0d (%s), Score: %.5f' % (i,feature_index[i], v))
-    
-    selected_columns = ['age', 'avg_glucose_level', 'bmi']
-    final_X_train = X_train[selected_columns].copy()
-    final_X_test = X_test[selected_columns].copy()
 
-    SVC_Gaussian = SVC(kernel='rbf')
+    selected_columns = ['age', 'avg_glucose_level', 'bmi']
+    X_df = df[selected_columns].copy()
+    y_df = df['stroke'].copy()
+
+    # Create our train and test data splits
+    X_train, X_test, y_train, y_test = train_test_split(X_df, y_df, test_size=0.33, random_state=42)
+
+    SVC_Gaussian = SVC(kernel='poly')
     # .values gives the numpy array values shape (n, 1). 
     # .ravel will flatten the array to (n,)
-    SVC_Gaussian.fit(final_X_train, y_train.values.ravel())
+    SVC_Gaussian.fit(X_train, y_train)
 
     # Make predictions:
-    expected = y_test.values.ravel()
-    predicted = SVC_Gaussian.predict(final_X_test)
-    print(set(expected) - set(predicted))
-    print(expected)
-    print(predicted)
+    predicted = SVC_Gaussian.predict(X_test)
+    print(set(y_test) - set(predicted))
 
-    print(classification_report(expected, predicted))
-    print(confusion_matrix(expected, predicted))
+    print(classification_report(y_test, predicted))
+    print(confusion_matrix(y_test, predicted))
+
+    # DT classifier
+    dt_classifier = DecisionTreeClassifier()
+    dt_classifier.fit(X_train, y_train)
+    predicted = SVC_Gaussian.predict(X_test)
+    print(set(y_test) - set(predicted))
+
+    print(classification_report(y_test, predicted))
+    print(confusion_matrix(y_test, predicted))
+
     # Remaining steps:
     # * model selection and tuning
-    # SVC_Gaussian = SVC(kernel='rbf')
     """
     Models to explore:
     * Logistic Regression
